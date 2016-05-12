@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+  <title>I Love Poor People, I keep Getting Richer, they just... stay the same - Matthew McCognahary
+  </title>
+</head>
+<style>
+
+body {
+  font: 10px sans-serif;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.x.axis path {
+  display: none;
+}
+
+.line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
+
+.overlay {
+  fill: none;
+  pointer-events: all;
+}
+
+.focus circle {
+  fill: none;
+  stroke: steelblue;
+}
+
+</style>
+<body>
+  <h2>
+    Median House Income Across Different Percentiles
+  </h2>
+
+<script src="//d3js.org/d3.v3.min.js"></script>
+<script>
+
+var margin = {top: 20, right: 350, bottom: 30, left: 50},
+    width = 960 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom
+    chartpadding = 75;
+
+var parseDate = d3.time.format("%Y").parse,
+    bisectDate = d3.bisector(function(d) { return d.Year; }).left,
+    formatValue = d3.format(",.2f"),
+    formatCurrency = function(d) { return "$" + formatValue(d); };
+
+
+var ratioFormatter = d3.format(".3n")
+
+var x = d3.time.scale()
+    .range([0, width]);
+
+var y = d3.scale.linear()
+    .range([height, 0]);
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom");
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left");
+
+
+var line = d3.svg.line()
+    .x(function(d) { return x(d.Year); })
+    .y(function(d) { return y(d.SNP); });
+
+var svg1g1 = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+var y2 = d3.scale.linear()
+    .range([height, 0]);
+
+
+
+
+
+var yAxis2 = d3.svg.axis()
+    .scale(y2)
+    .orient("right");
+
+
+
+
+var yBar = d3.scale.linear()
+    .range([height, 0]);
+
+var get_ratio = function(row){
+  var bottomInc = +row.Lowest
+  var topInc = +row.Top_5
+  row.Ratio = topInc/bottomInc
+};
+
+
+d3.tsv("data.tsv", function(error, data) {
+  if (error) throw error;
+
+  data.forEach(function(d) {
+    d.Year = parseDate(d.Year);
+    d.SNP = +d.SNP;
+  });
+
+
+  data.forEach(get_ratio);
+
+  data.sort(function(a, b) {
+    return a.Year - b.Year;
+  });
+
+  x.domain([data[0].Year, data[data.length - 1].Year]);
+  var SNPdomain = d3.extent(data, function(d) { return d.SNP; })
+  y.domain([SNPdomain[0] * .20,SNPdomain[1]]);
+
+  var maxdiff = d3.extent(data, function(d) { return d.Ratio; })[1]
+
+  yBar.domain([0,maxdiff]);
+
+  var bottom_range = d3.extent(data, function(d) { return d.Lowest})[0]
+  var top_range = d3.extent(data, function(d) { return d.Top_5})[1]
+
+  y2.domain([bottom_range * .20,top_range]);
+
+  var line2 = d3.svg.line()
+    .x(function(d) { return x(d.Year);})
+    .y(function(d) { return y2(d.Lowest)});
+
+  var line3 = d3.svg.line()
+    .x(function(d) { return x(d.Year);})
+    .y(function(d) { return y2(d.Second)});
+
+  var line4 = d3.svg.line()
+    .x(function(d) { return x(d.Year);})
+    .y(function(d) { return y2(d.Third)});
+
+  var line5 = d3.svg.line()
+    .x(function(d) { return x(d.Year);})
+    .y(function(d) { return y2(d.Fourth)});
+
+  var line6 = d3.svg.line()
+    .x(function(d) { return x(d.Year);})
+    .y(function(d) { return y2(d.Top_5)});
+
+
+
+  svg1g1.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis);
+
+  svg1g1.append("g")
+      .attr("class", "y axis")
+      .call(yAxis)
+    .append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text("Price ($)");
+
+  svg1g1.append("g")
+      .attr("class", "y axis")
+      .attr("transform", "translate(" + width + "," + "0)")
+      .call(yAxis2)
+      .append("text")
+      .attr("transform", "rotate(90)")
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text("Price ($)");
+
+
+  svg1g1.append("path")
+      .datum(data)
+      .attr("class", "line")
+      .attr("d", line);
+
+
+  svg1g1.append("path")
+      .attr("id", "lowest")
+      .datum(data)
+      .attr("class", "line")
+      //.attr("class", "Households")
+      .attr("d", line2)
+      .style('stroke', 'black');
+
+  svg1g1.append("path")
+      .attr("id", "Second")
+      .datum(data)
+      .attr("class", "line")
+      //.attr("class", "Households")
+      .attr("d", line3)
+      .style('stroke', 'black');
+
+  svg1g1.append("path")
+      .attr("id", "Third")
+      .datum(data)
+      .attr("class", "line")
+      //.attr("class", "Households")
+      .attr("d", line4)
+      .style('stroke', 'black');
+
+  svg1g1.append("path")
+      .attr("id", "Fourth")
+      .datum(data)
+      .attr("class", "line")
+      //.attr("class", "Households")
+      .attr("d", line5)
+      .style('stroke', 'black');
+
+  svg1g1.append("path")
+      .attr("id", "Top_5")
+      .datum(data)
+      .attr("class", "line")
+      .attr("d", line6)
+      .style('stroke', 'black');
+
+
+
+
+  var bar_transition = margin.left + width + chartpadding
+
+  svg1g2 = d3.select("body").select("svg")
+      .append("g")
+      .attr("class", "second_chart")
+      .attr("transform", "translate(" + bar_transition + "," + margin.top + ")");
+
+  svg1g2.selectAll('.bar').data([data[0]]).enter().append('rect').attr('class','bar')
+      .attr("x", '0')
+      .attr("width", '20')
+      .attr("y", function(d) { return yBar(d.Ratio); })
+      .attr("height", function(d) { return height - yBar(d.Ratio); });
+
+  svg1g2.selectAll('.text').data([data[0].Ratio]).enter().append("text")
+      .attr("transform", "translate(40,50)")
+      .attr('id','reporting')
+      .text(function(d){return ratioFormatter(d)})
+      .style('font-size',50);
+
+
+
+  svg1g1.append("line")
+      .attr("id","currTime")
+      .attr("x1", 0)  
+      .attr("y1", 0)
+      .attr("x2", 0) 
+      .attr("y2", height - margin.top + margin.bottom)
+      .style("stroke-width", 2)
+      .style("stroke", "red")
+      .style("fill", "none");
+
+  svg1g1.append("rect")
+      .attr("id", 'over')
+      .attr("class", "overlay")
+      .attr("width", width)
+      .attr("height", height)
+      .on("mouseover", function(d) { 
+          var pos_year = d3.time.format("%Y")(x.invert(d3.mouse(this)[0])); 
+          var new_ratio = data.filter(function(x){return d3.time.format("%Y")(x.Year) == pos_year});
+          var new_ratio = ratioFormatter(new_ratio[0].Ratio);
+          d3.selectAll('.bar')
+            .attr("y", yBar(new_ratio))
+            .attr("height", height - yBar(new_ratio));
+          d3.select('#reporting').text(new_ratio);
+          d3.select('#currTime')
+            .attr("x1", d3.mouse(this)[0])
+            .attr("x2", d3.mouse(this)[0]);
+        });
+  svg1g1.select('#over')
+      .on("mousemove", function(d) { 
+          var pos_year = d3.time.format("%Y")(x.invert(d3.mouse(this)[0])); 
+          var new_ratio = data.filter(function(x){return d3.time.format("%Y")(x.Year) == pos_year});
+          var new_ratio = ratioFormatter(new_ratio[0].Ratio);
+          d3.selectAll('.bar')
+            .attr("y", yBar(new_ratio))
+            .attr("height", height - yBar(new_ratio));
+          d3.select('#reporting').text(new_ratio);
+          d3.select('#currTime')
+            .attr("x1", d3.mouse(this)[0])
+            .attr("x2", d3.mouse(this)[0]);
+        });
+
+
+
+
+
+
+      debugger;
+
+
+
+
+
+
+
+
+
+
+});
+
+</script>
